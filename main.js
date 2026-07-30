@@ -26,8 +26,11 @@ const GITHUB_MARKDOWN_CSS = `.markdown-body { --base-size-16: 1rem; --base-size-
 
 // Obsidian-rendered output uses classes (.callout, .markdown-rendered, .internal-link,
 // .tag, .image-embed) that github-markdown-css doesn't style. This minimal layer
-// makes them look reasonable inside .markdown-body.
+// makes them look reasonable inside .markdown-body. Also includes the body-level
+// padding/centering that github-markdown-css doesn't set on body itself.
 const OBSIDIAN_COMPAT_CSS = `
+body.markdown-body { max-width: 980px; margin: 0 auto; padding: 32px 24px; box-sizing: border-box; }
+@media (max-width: 767px) { body.markdown-body { padding: 16px 12px; } }
 .markdown-body .callout { border-left: 4px solid #888; background: rgba(127,127,127,0.08); padding: 8px 16px; margin: 16px 0; border-radius: 4px; }
 .markdown-body .callout-title { display: flex; align-items: center; gap: 6px; font-weight: 600; margin: 0 0 4px 0; }
 .markdown-body .callout-content { margin: 0; }
@@ -46,13 +49,68 @@ class Md2htmlEnhanced extends obsidian.Plugin {
 	// Render a markdown string fragment via Obsidian's MarkdownRenderer.
 	// Reliable for any content; doesn't depend on view scroll state.
 	async renderFragment(md, sourcePath = "") {
+		// Strip Obsidian-specific code blocks from the source markdown BEFORE
+		// rendering. Dataview / Journal Nav / frontmatter blocks have their
+		// own scoped CSS (Vue data-v-* attrs, custom JS rendering) that
+		// doesn't work in a self-contained HTML — easier to remove at
+		// the source level than to balance divs in the rendered output.
+		const cleaned = this.stripObsidianCodeBlocks(md);
 		const comp = new obsidian.Component();
 		comp.load();
 		const div = createDiv();
-		await obsidian.MarkdownRenderer.render(this.app, md, div, sourcePath, comp);
+		await obsidian.MarkdownRenderer.render(
+			this.app,
+			cleaned,
+			div,
+			sourcePath,
+			comp,
+		);
 		const html = div.innerHTML;
 		comp.unload();
 		return this.clean(html);
+	}
+
+	// Remove Obsidian's "named code blocks" (`> [!name]`) for plugin blocks
+	// whose output doesn't render meaningfully outside Obsidian. This is much
+	// simpler than stripping from the rendered HTML, because the source
+	// markdown has clean fenced blocks (no Vue scoped attrs, no nested
+	// divs to balance).
+	//
+	// Default skip list: frontmatter, dataview, journal-nav, and any
+	// other `> [!xxx]` code block. Override via the second argument
+	// if you need finer control.
+	stripObsidianCodeBlocks(md, extraSkipNames = []) {
+		const skipNames = new Set([
+			"frontmatter",
+			"dataview",
+			"journal-nav",
+			"calendar",
+			"kanban",
+			"meta-bind",
+			"meta-bind-button",
+			"meta-bind-input",
+			...extraSkipNames,
+		]);
+		let out = md;
+
+		// 1. Strip YAML frontmatter at the very start of the file:
+		//    ---\nkey: value\n---\n
+		out = out.replace(
+			/^---\s*\n[\s\S]*?\n---\s*(?:\n|$)/,
+			"",
+		);
+
+		// 2. Strip `> [!name]` code blocks. The block ends at the first
+		//    non-`>` line. We strip the entire block (header + body).
+		const re = /^(\s*)>\s*\[!([a-z0-9_-]+)\][^\n]*\n((?:\s*>.*\n?)*)/gim;
+		out = out.replace(re, (match, indent, name) => {
+			if (skipNames.has(name.toLowerCase())) {
+				return "";
+			}
+			return match;
+		});
+
+		return out;
 	}
 
 	// Read the active note's raw content and render it via MarkdownRenderer.
