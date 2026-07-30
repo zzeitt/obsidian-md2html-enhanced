@@ -1,0 +1,6 @@
+node_modules/
+*.log
+.DS_Store
+# main.js is the built plugin entry — we commit it (no build step)
+# lib/github-markdown.css.js is the bundled CSS — also committed (generated)
+# Don't gitignore them.
