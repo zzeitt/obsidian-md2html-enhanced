@@ -1,7 +1,7 @@
 {
 	"id": "md2html-enhanced",
 	"name": "md2html enhanced",
-	"version": "0.1.1",
+	"version": "0.1.2",
 	"minAppVersion": "0.15.0",
 	"description": "Export Obsidian notes as self-contained, GitHub-styled standalone HTML (fork of xero/obsidian-md2html).",
 	"author": "zzeitt",

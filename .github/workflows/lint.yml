@@ -10,6 +10,8 @@ jobs:
     build:
         runs-on: ubuntu-latest
 
+        # Note: pure-JS plugin. We test against multiple Node versions to
+        # catch syntax compatibility issues, but we don't use npm at all.
         strategy:
             matrix:
                 node-version: [20.x, 22.x, 24.x]
@@ -20,6 +22,7 @@ jobs:
               uses: actions/setup-node@v6
               with:
                   node-version: ${{ matrix.node-version }}
+                  # No cache: 'npm' — we have no package.json/lockfile.
             # Pure-JS plugin: no build, no eslint. Just verify syntax + JSON validity.
             - name: Verify main.js parses
               run: node --check main.js

@@ -15,16 +15,17 @@ jobs:
         steps:
             - uses: actions/checkout@v6
 
-            - name: Use Node.js
-              uses: actions/setup-node@v6
-              with:
-                  node-version: 24
-                  cache: 'npm'
+            # Pure-JS plugin: no npm, no build. Just verify main.js parses.
+            # ubuntu-latest runners have Node preinstalled; skip setup-node.
 
-            # Note: this is a pure-JS plugin — no build step.
-            # main.js is the source; we just verify it parses.
             - name: Verify main.js parses
               run: node --check main.js
+
+            - name: Verify manifest.json valid
+              run: node -e "JSON.parse(require('fs').readFileSync('manifest.json', 'utf8'))"
+
+            - name: Verify versions.json valid
+              run: node -e "JSON.parse(require('fs').readFileSync('versions.json', 'utf8'))"
 
             - name: Check for optional styles
               id: styles
