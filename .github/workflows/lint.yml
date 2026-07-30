@@ -1,0 +1,29 @@
+name: Lint
+
+on:
+    push:
+        branches: ['**']
+    pull_request:
+        branches: ['**']
+
+jobs:
+    build:
+        runs-on: ubuntu-latest
+
+        strategy:
+            matrix:
+                node-version: [20.x, 22.x, 24.x]
+
+        steps:
+            - uses: actions/checkout@v6
+            - name: Use Node.js ${{ matrix.node-version }}
+              uses: actions/setup-node@v6
+              with:
+                  node-version: ${{ matrix.node-version }}
+            # Pure-JS plugin: no build, no eslint. Just verify syntax + JSON validity.
+            - name: Verify main.js parses
+              run: node --check main.js
+            - name: Verify manifest.json valid
+              run: node -e "JSON.parse(require('fs').readFileSync('manifest.json', 'utf8'))"
+            - name: Verify versions.json valid
+              run: node -e "JSON.parse(require('fs').readFileSync('versions.json', 'utf8'))"

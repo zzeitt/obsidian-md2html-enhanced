@@ -1,0 +1,13 @@
+/*
+
+This CSS file is included for compatibility with the canonical Obsidian plugin
+layout. md2html enhanced does NOT use any plugin-specific CSS — styling is
+handled by the bundled github-markdown-css inlined into the output HTML.
+
+If you fork this plugin and want plugin-UI styling (e.g. for the settings
+tab), uncomment the rules below.
+
+*/
+
+# md2html-enhanced {
+}

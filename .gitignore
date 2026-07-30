@@ -1,6 +1,27 @@
-node_modules/
-*.log
+# vscode
+.vscode
+
+# Intellij
+*.iml
+.idea
+
+# npm (we don't use it but keep for future)
+node_modules
+
+# Don't include the compiled main.js in the repo.
+# It should be uploaded to GitHub releases instead.
+# Note: our main.js IS the source (pure-JS, no build), so we DO commit it.
+# Uncomment below if you switch to a TypeScript build:
+# main.js
+
+# Exclude sourcemaps
+*.map
+
+# obsidian
+data.json
+
+# macOS Finder
 .DS_Store
-# main.js is the built plugin entry — we commit it (no build step)
-# lib/github-markdown.css.js is the bundled CSS — also committed (generated)
-# Don't gitignore them.
+
+# Custom
+*.tmp
