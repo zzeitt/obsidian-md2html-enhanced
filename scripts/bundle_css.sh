@@ -1,43 +1,30 @@
 #!/usr/bin/env bash
-# Regenerate lib/github-markdown.css.js from upstream.
+# Regenerate the bundled github-markdown-css (inlined into main.js).
 #
-# After editing, run ./scripts/bundle_css.sh to refresh the bundled CSS.
-# Then commit the new lib/github-markdown.css.js.
+# This is no longer used at runtime — the CSS is now embedded as a string
+# constant in main.js (single-file plugin, no separate lib/ folder).
+#
+# After running this script, the new CSS is at /tmp/gmcss-new.txt.
+# Paste its contents into the GITHUB_MARKDOWN_CSS template literal in
+# main.js, replacing the existing value. (Run this once after major
+# upstream CSS updates; not a regular operation.)
+#
+# The placeholder `__GITHUB_MARKDOWN_CSS_PLACEHOLDER__` in main.js.tpl
+# is replaced during plugin development — see main.js itself for the
+# current value.
 
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-SRC_CSS="/tmp/gmcss.css"
-DEST_JS="$REPO_ROOT/lib/github-markdown.css.js"
 
 echo "→ fetching github-markdown-css v5 from jsDelivr..."
-curl -fsSL https://cdn.jsdelivr.net/npm/github-markdown-css@5/github-markdown.css -o "$SRC_CSS"
+curl -fsSL https://cdn.jsdelivr.net/npm/github-markdown-css@5/github-markdown.css \
+  -o /tmp/gmcss-new.txt
 
-echo "→ building $DEST_JS..."
-python3 << 'PYEOF'
-import re, sys
-
-with open("/tmp/gmcss.css", "r") as f:
-    css = f.read()
-
-# Strip comments + collapse whitespace
-css_clean = re.sub(r"/\*.*?\*/", "", css, flags=re.DOTALL)
-css_clean = re.sub(r"\s+", " ", css_clean).strip()
-
-# Escape for JS template literals
-escaped = css_clean.replace("\\", "\\\\").replace("`", "\\`").replace("${", "\\${")
-
-with open("lib/github-markdown.css.js", "w") as f:
-    f.write(f"""// Bundled github-markdown-css v5 (CC0, sindresorhus).
-// To regenerate: ./scripts/bundle_css.sh
-// Do not edit by hand.
-module.exports = `{escaped}`;
-""")
-
-print(f"  ✓ lib/github-markdown.css.js ({len(open('lib/github-markdown.css.js').read())} bytes)")
-PYEOF
-
-echo "done. remember to:"
-echo "  git add lib/github-markdown.css.js"
-echo "  git commit -m 'chore: refresh bundled github-markdown-css'"
-echo "  git push"
+echo "→ fetched $(wc -c < /tmp/gmcss-new.txt) bytes"
+echo ""
+echo "next steps:"
+echo "  1. cat /tmp/gmcss-new.txt"
+echo "  2. open main.js"
+echo "  3. replace the contents of the GITHUB_MARKDOWN_CSS template literal"
+echo "  4. (escape any \` and \${ if present, then re-test with node --check main.js)"
